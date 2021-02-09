@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var mongoose = require('mongoose');
 var schema = new mongoose.Schema({
     id: String,
@@ -42,22 +43,28 @@ schema.statics = {
     findUserList: function (data, cb) {
         var skip = data.pageSize >= data.count ? 0 : ((data.pageNumber - 1) == 0 ? 0 : (data.pageNumber - 1) * data.pageSize);
         // console.log(skip);
-        var params = {
-            delFlag: data.delFlag
-        };
-        // createTime: {$gte: data.startTime, $lte: data.endTime},
-        // params.userName = /data.userName/;
-        // params.loginName = /data.loginName/;
-        if (data.ruleCode) {
-            params.ruleCode = data.ruleCode;
-        }
-        if (data.userName) {
-            params.userName = '/' + data.userName + '/';
-        }
-        if (data.loginName) {
-            params.loginName = '/' + data.loginName + '/';
-        }
-        console.log(params);
+        var params = _.omit(data, ['count', 'pageNumber', 'pageSize']);
+        // var params = {
+        //     delFlag: data.delFlag
+        // };
+        // if (data.beginTime) {
+        //     params.createTime = {$gte: data.beginTime}
+        // }
+        // if (data.endTime) {
+        //     params.createTime = {$lte: data.endTime}
+        // }
+        // if (data.beginTime && data.endTime) {
+        //     params.createTime = {$gte: data.beginTime, $lte: data.endTime}
+        // }
+        // if (data.ruleCode) {
+        //     params.ruleCode = data.ruleCode;
+        // }
+        // if (data.userName) {
+        //     params.userName = new RegExp(data.userName);
+        // }
+        // if (data.loginName) {
+        //     params.loginName = new RegExp(data.loginName);
+        // }
         return this
             .find(params)
             .sort({createTime: -1})

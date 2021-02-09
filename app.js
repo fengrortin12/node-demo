@@ -120,25 +120,40 @@ app.post(api + '/userList', function (req, res) {
     var parmas = req.body;
     //筛选条件
     var countP = {
-        delFlag: 0
+        delFlag: 0,
+        pageNumber: parmas.pageNumber ? parmas.pageNumber : 1,
+        pageSize: parmas.pageSize ? parmas.pageSize : 10
     };
     if (parmas.ruleCode) {
         countP.ruleCode = parmas.ruleCode;
     }
     if (parmas.userName) {
-        countP.userName = '/' + parmas.userName + '/';
+        countP.userName = new RegExp(parmas.userName);
     }
     if (parmas.loginName) {
-        countP.loginName = '/' + parmas.loginName + '/';
+        countP.loginName = new RegExp(parmas.loginName);
     }
+    if (parmas.beginTime) {
+        countP.createTime = {$gte: parmas.beginTime}
+    }
+    if (parmas.endTime) {
+        countP.createTime = {$lte: parmas.endTime}
+    }
+    if (parmas.beginTime && parmas.endTime) {
+        countP.createTime = {$gte: parmas.beginTime, $lte: parmas.endTime}
+    }
+    if (parmas.ruleCode) {
+        countP.ruleCode = parmas.ruleCode;
+    }
+    //获取总条数
     userInfo.findCount(countP, function (err, count) {
         if (err) {
             console.log(err);
             return
         }
-        parmas.count = count;
-        parmas.delFlag = 0;
-        userInfo.findUserList(parmas, function (err, data) {
+        countP.count = count;
+        countP.delFlag = 0;
+        userInfo.findUserList(countP, function (err, data) {
             if (err) {
                 console.log(err);
                 return
@@ -152,13 +167,13 @@ app.post(api + '/userList', function (req, res) {
                 }
             }
             var result = new Object();
-            var totalPages = (parmas.count / parmas.pageSize) > 1 ? (parmas.count / parmas.pageSize) : 1;
+            var totalPages = (countP.count / countP.pageSize) > 1 ? (countP.count / countP.pageSize) : 1;
             result.lists = {
                 content: content,
-                number: parmas.pageNumber,
-                size: parmas.pageSize,
-                totalElements: parmas.count,
-                totalPages: Math.ceil(totalPages)
+                number: countP.pageNumber,
+                size: countP.pageSize,
+                totalElements: countP.count,
+                totalPages: countP.count > 0 ? Math.ceil(totalPages) : 0
             };
             result.code = 10000;
             result.msg = 'success';

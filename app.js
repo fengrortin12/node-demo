@@ -47,7 +47,7 @@ app.post(api + '/weblogin', function (req, res) {
             res.send(errorObj)
         } else {
             var successObj = new Object();
-            console.log('输入密码：' + pwd + '  <--|-->  ' + '输出密码：' + data.password + '\n');
+            // console.log('输入密码：' + pwd + '  <--|-->  ' + '输出密码：' + data.password + '\n');
             if (pwd == data.password) {
                 successObj.code = 10000;
                 successObj.msg = 'success';
@@ -79,6 +79,10 @@ app.post(api + '/saveUser', function (req, res) {
             res.statusCode = 202;
             res.send(errorObj)
         } else {
+            parmas.delFlag = 0;
+            parmas.ruleCode = 1;
+            parmas.ruleName = '普通用户';
+            parmas.createTime = new Date().toLocaleString();
             //执行注册方法
             userInfo.create(parmas, function (err, data) {
                 if (err) {
@@ -96,20 +100,37 @@ app.post(api + '/saveUser', function (req, res) {
 //用户列表
 app.post(api + '/userList', function (req, res) {
     var parmas = req.body;
-    userInfo.findCount(function (err, data) {
+    userInfo.findCount({delFlag: 0}, function (err, count) {
         if (err) {
             console.log(err);
             return
         }
-        parmas.count = data;
-        console.log(parmas.count);
+        parmas.count = count;
+        parmas.delFlag = 0;
         userInfo.limitUserList(parmas, function (err, data) {
             if (err) {
                 console.log(err);
                 return
             }
+            if (data && data.length > 0) {
+                var content = [];
+                for (var i = 0; i < data.length; i++) {
+                    data[i].id = data[i]._id;
+                    data[i] = _.pick(data[i], ['id', 'userName', 'ruleName', 'ruleCode', 'loginName', 'email', 'address', 'phoneNumber', 'delFlag', 'createTime']);
+                    // if (data[i].delFlag == 0) {
+                    content.push(data[i]);
+                    // }
+                }
+            }
             var result = new Object();
-            result.content = data;
+            var totalPages = (parmas.count / parmas.pageSize) > 1 ? (parmas.count / parmas.pageSize) : 1;
+            result.lists = {
+                content: content,
+                number: parmas.pageNumber,
+                size: parmas.pageSize,
+                totalElements: parmas.count,
+                totalPages: Math.ceil(totalPages)
+            };
             result.code = 10000;
             result.msg = 'success';
             res.send(result);
@@ -117,4 +138,26 @@ app.post(api + '/userList', function (req, res) {
     });
 
 });
+//用户删除
+app.post(api + '/userDel', function (req, res) {
+    var id = req.body.id;
+    var result = new Object();
+    if (id) {
+        userInfo.updateOne({'_id': Object(id)}, {$set: {'delFlag': 1}}, function (err, data) {
+            if (err) {
+                console.log(err);
+                return
+            }
+            result.code = 10000;
+            result.msg = 'success';
+            res.send(data);
+        });
+    } else {
+        result.code = 10001;
+        result.msg = '没有id';
+        res.send(result);
+    }
+});
+
+//监听端口
 app.listen(port);

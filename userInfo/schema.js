@@ -1,10 +1,12 @@
 var mongoose = require('mongoose');
 var schema = new mongoose.Schema({
+    id: String,
     userName: String,
     ruleName: String,
     ruleCode: {
         type: Number,
-        min: 0
+        min: 0,
+        max: 5
     },
     loginName: {
         unique: true,//唯一索引
@@ -15,9 +17,13 @@ var schema = new mongoose.Schema({
     email: String,
     address: String,
     phoneNumber: String,
+    delFlag: {
+        type: Number,
+        min: 0,
+        max: 1
+    },
     createTime: {
-        type: Date,
-        default: Date.now()
+        type: Date
     }
 });
 //userInfo实例方法集合
@@ -28,16 +34,18 @@ schema.statics = {
     findBylogin: function (data, cb) {
         return this.findOne(data).exec(cb);
     },
-    findCount: function (cb) {
-        return this.find().count().exec(cb);
+    findCount: function (data, cb) {
+        return this.find(data).count().exec(cb);
     },
     //分页查询
     limitUserList: function (data, cb) {
+        var skip = data.pageSize >= data.count ? 0 : ((data.pageNumber - 1) == 0 ? 0 : (data.pageNumber - 1) * data.pageSize);
+        // console.log(skip);
         return this
-            .find()
+            .find({delFlag: data.delFlag})
             .sort({createTime: -1})
-            .skip(data.pageSize < data.count ? (data.pageNumber * data.pageSize) : 0)
             .limit(data.pageSize)
+            .skip(skip)
             .exec(cb);
     }
 };

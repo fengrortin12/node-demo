@@ -39,15 +39,32 @@ schema.statics = {
         return this.find(data).count().exec(cb);
     },
     //分页查询
-    limitUserList: function (data, cb) {
+    findUserList: function (data, cb) {
         var skip = data.pageSize >= data.count ? 0 : ((data.pageNumber - 1) == 0 ? 0 : (data.pageNumber - 1) * data.pageSize);
         // console.log(skip);
+        var params = {
+            delFlag: data.delFlag
+        };
+        // createTime: {$gte: data.startTime, $lte: data.endTime},
+        // params.userName = /data.userName/;
+        // params.loginName = /data.loginName/;
+        if (data.ruleCode) {
+            params.ruleCode = data.ruleCode;
+        }
+        if (data.userName) {
+            params.userName = '/' + data.userName + '/';
+        }
+        if (data.loginName) {
+            params.loginName = '/' + data.loginName + '/';
+        }
+        console.log(params);
         return this
-            .find({delFlag: data.delFlag})
+            .find(params)
             .sort({createTime: -1})
             .limit(data.pageSize)
             .skip(skip)
             .exec(cb);
     }
-};
+}
+;
 module.exports = schema;

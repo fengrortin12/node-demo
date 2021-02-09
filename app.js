@@ -62,6 +62,7 @@ app.post(api + '/weblogin', function (req, res) {
         }
     })
 });
+
 //注册or编辑
 app.post(api + '/saveUser', function (req, res) {
     var parmas = req.body;
@@ -113,29 +114,41 @@ app.post(api + '/saveUser', function (req, res) {
         })
     }
 });
+
 //用户列表
 app.post(api + '/userList', function (req, res) {
     var parmas = req.body;
-    userInfo.findCount({delFlag: 0}, function (err, count) {
+    //筛选条件
+    var countP = {
+        delFlag: 0
+    };
+    if (parmas.ruleCode) {
+        countP.ruleCode = parmas.ruleCode;
+    }
+    if (parmas.userName) {
+        countP.userName = '/' + parmas.userName + '/';
+    }
+    if (parmas.loginName) {
+        countP.loginName = '/' + parmas.loginName + '/';
+    }
+    userInfo.findCount(countP, function (err, count) {
         if (err) {
             console.log(err);
             return
         }
         parmas.count = count;
         parmas.delFlag = 0;
-        userInfo.limitUserList(parmas, function (err, data) {
+        userInfo.findUserList(parmas, function (err, data) {
             if (err) {
                 console.log(err);
                 return
             }
+            var content = [];
             if (data && data.length > 0) {
-                var content = [];
                 for (var i = 0; i < data.length; i++) {
                     data[i].id = data[i]._id;
                     data[i] = _.pick(data[i], ['id', 'userName', 'ruleName', 'ruleCode', 'loginName', 'email', 'address', 'phoneNumber', 'delFlag', 'createTime', 'updateTime']);
-                    // if (data[i].delFlag == 0) {
                     content.push(data[i]);
-                    // }
                 }
             }
             var result = new Object();
@@ -154,6 +167,7 @@ app.post(api + '/userList', function (req, res) {
     });
 
 });
+
 //用户详情
 app.get(api + '/userDetail/:id', function (req, res) {
     var id = req.params.id;
@@ -170,6 +184,7 @@ app.get(api + '/userDetail/:id', function (req, res) {
         res.send(result);
     })
 });
+
 //用户删除
 app.post(api + '/userDel', function (req, res) {
     var id = req.body.id;

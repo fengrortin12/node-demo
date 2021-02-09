@@ -24,7 +24,8 @@ var schema = new mongoose.Schema({
     },
     createTime: {
         type: Date
-    }
+    },
+    updateTime: Date
 });
 //userInfo实例方法集合
 schema.methods = {};

@@ -52,7 +52,7 @@ app.post(api + '/weblogin', function (req, res) {
                 successObj.code = 10000;
                 successObj.msg = 'success';
                 data.id = data._id;
-                successObj.userInfo = _.pick(data, ['id', 'userName', 'ruleName', 'loginName', 'email', 'address', 'ruleCode']);
+                successObj.userInfo = _.pick(data, ['id', 'userName', 'ruleName', 'loginName', 'phoneNumber', 'email', 'address', 'ruleCode', 'delFlag', 'createTime', 'updateTime']);
             } else {
                 successObj.code = 10001;
                 successObj.msg = '亲，密码写错了！';
@@ -62,40 +62,56 @@ app.post(api + '/weblogin', function (req, res) {
         }
     })
 });
-//注册
+//注册or编辑
 app.post(api + '/saveUser', function (req, res) {
     var parmas = req.body;
-    parmas.password = md5(parmas.password);
-    //查询是否存在用户
-    userInfo.findBylogin({loginName: parmas.loginName}, function (err, data) {
-        if (err) {
-            console.log(err);
-            return
-        }
-        if (data) {
-            var errorObj = new Object();
-            errorObj.code = 10001;
-            errorObj.msg = '亲，您已经注册过了，不能重复注册哦！';
-            res.statusCode = 202;
-            res.send(errorObj)
-        } else {
-            parmas.delFlag = 0;
-            parmas.ruleCode = 1;
-            parmas.ruleName = '普通用户';
-            parmas.createTime = new Date().toLocaleString();
-            //执行注册方法
-            userInfo.create(parmas, function (err, data) {
-                if (err) {
-                    console.log(err);
-                    return
-                }
-                var result = new Object();
-                result.code = 10000;
-                result.msg = 'success';
-                res.send(result)
-            })
-        }
-    })
+    //判断是否是编辑
+    if (parmas.id) {
+        parmas.updateTime = new Date().toLocaleString();
+        userInfo.updateOne({'_id': parmas.id}, {$set: parmas}, function (err, data) {
+            if (err) {
+                console.log(err);
+                return
+            }
+            var result = new Object();
+            result.code = 10000;
+            result.msg = 'success';
+            res.send(data);
+        });
+    } else {
+        parmas.password = md5(parmas.password);
+        //查询是否存在用户
+        userInfo.findBylogin({loginName: parmas.loginName}, function (err, data) {
+            if (err) {
+                console.log(err);
+                return
+            }
+            if (data) {
+                var errorObj = new Object();
+                errorObj.code = 10001;
+                errorObj.msg = '亲，您已经注册过了，不能重复注册哦！';
+                res.statusCode = 202;
+                res.send(errorObj)
+            } else {
+                parmas.delFlag = 0;
+                parmas.ruleCode = 1;
+                parmas.ruleName = '普通用户';
+                parmas.createTime = new Date().toLocaleString();
+                parmas.updateTime = parmas.createTime;
+                //执行注册方法
+                userInfo.create(parmas, function (err, data) {
+                    if (err) {
+                        console.log(err);
+                        return
+                    }
+                    var result = new Object();
+                    result.code = 10000;
+                    result.msg = 'success';
+                    res.send(result)
+                })
+            }
+        })
+    }
 });
 //用户列表
 app.post(api + '/userList', function (req, res) {
@@ -116,7 +132,7 @@ app.post(api + '/userList', function (req, res) {
                 var content = [];
                 for (var i = 0; i < data.length; i++) {
                     data[i].id = data[i]._id;
-                    data[i] = _.pick(data[i], ['id', 'userName', 'ruleName', 'ruleCode', 'loginName', 'email', 'address', 'phoneNumber', 'delFlag', 'createTime']);
+                    data[i] = _.pick(data[i], ['id', 'userName', 'ruleName', 'ruleCode', 'loginName', 'email', 'address', 'phoneNumber', 'delFlag', 'createTime', 'updateTime']);
                     // if (data[i].delFlag == 0) {
                     content.push(data[i]);
                     // }
@@ -138,12 +154,28 @@ app.post(api + '/userList', function (req, res) {
     });
 
 });
+//用户详情
+app.get(api + '/userDetail/:id', function (req, res) {
+    var id = req.params.id;
+    userInfo.findBylogin({'_id': id}, function (err, data) {
+        if (err) {
+            console.log(err);
+            return
+        }
+        var result = new Object();
+        result.code = 10000;
+        result.msg = 'success';
+        data.id = data._id;
+        result.content = _.pick(data, ['id', 'userName', 'ruleName', 'loginName', 'phoneNumber', 'email', 'address', 'ruleCode', 'delFlag', 'createTime', 'updateTime']);
+        res.send(result);
+    })
+});
 //用户删除
 app.post(api + '/userDel', function (req, res) {
     var id = req.body.id;
     var result = new Object();
     if (id) {
-        userInfo.updateOne({'_id': Object(id)}, {$set: {'delFlag': 1}}, function (err, data) {
+        userInfo.updateOne({'_id': id}, {$set: {'delFlag': 1}}, function (err, data) {
             if (err) {
                 console.log(err);
                 return

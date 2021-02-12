@@ -145,14 +145,14 @@ app.post(api + '/userList', function (req, res) {
     if (parmas.ruleCode) {
         countP.ruleCode = parmas.ruleCode;
     }
+    var countParams = _.omit(countP, ['pageNumber', 'pageSize']);
     //获取总条数
-    userInfo.findCount(countP, function (err, count) {
+    userInfo.findCount(countParams, function (err, count) {
         if (err) {
             console.log(err);
             return
         }
         countP.count = count;
-        countP.delFlag = 0;
         userInfo.findUserList(countP, function (err, data) {
             if (err) {
                 console.log(err);
